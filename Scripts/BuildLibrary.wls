@@ -41,7 +41,8 @@ Block[{$directory, $libSrc, $libDir, $linkerOptions},
             CreateDirectory[FileNameJoin[{$directory, "UV", $SystemID}] ];
             Echo["Storing UV library..."];
             Echo[$ScriptCommandLine[[-1]]];
-            CopyFile[$ScriptCommandLine[[-1]], uvLib];
+            Echo[uvLib];
+            CopyFile[$ScriptCommandLine[[-1]], uvLib, OverwriteTarget->True] // Echo;
         ];
     ];
 
