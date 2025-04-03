@@ -27,7 +27,7 @@ Which[
 ]; 
 
 build[lib_String, opts: OptionsPattern[CreateLibrary]] := 
-Block[{$directory, $libSrc, $libDir, $linkerOptions}, 
+Block[{$directory, $libSrc, $libDir, $linkerOptions, uvLib}, 
 
 
     $directory = DirectoryName[If[$InputFileName == "", 
