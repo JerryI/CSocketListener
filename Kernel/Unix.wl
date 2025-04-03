@@ -52,6 +52,13 @@ $libFile := FileNameJoin[{
 
 
 Echo["CSockets >> Unix >> " <> $SystemID];
+
+uvLib = FileNameJoin[{$directory, "UV", $SystemID, "libuv."<>Internal`DynamicLibraryExtension[]}];
+If[FileExistsQ[uvLib],
+    Echo["CSockets >> Unix >> Loading UV library..."];
+    LibraryLoad[uvLib];
+];
+
 Echo["CSockets >> Unix >> Loading library... LLink "<>ToString[getLibraryLinkVersion[] ] ];
 
 While[FailureQ[

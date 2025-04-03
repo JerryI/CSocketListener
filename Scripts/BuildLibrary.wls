@@ -28,10 +28,20 @@ Which[
 
 build[lib_String, opts: OptionsPattern[CreateLibrary]] := 
 Block[{$directory, $libSrc, $libDir, $linkerOptions}, 
+
+
     $directory = DirectoryName[If[$InputFileName == "", 
         NotebookFileName[], 
         $InputFileName
     ], 2]; 
+
+    If[$OperatingSystem =!= "Windows",
+        uvLib = FileNameJoin[{$directory, "UV", $SystemID, "libuv."<>Internal`DynamicLibraryExtension[]}];
+        If[!FileExistsQ[uvLib],
+            Echo["Storing UV library..."];
+            CopyFile[$ScriptCommandLine[[-1]], uvLib];
+        ];
+    ];
 
     $libSrc = File[FileNameJoin[{
         $directory, 
@@ -61,6 +71,8 @@ If[$OperatingSystem === "Windows",
 
 	$includes = $ScriptCommandLine[[-2]];
 	$libs = $ScriptCommandLine[[-1]];
+
+
 
 	build["usockets", "Libraries" -> {$libs}, "IncludeDirectories"->{$includes}] 
 ];
