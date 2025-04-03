@@ -38,7 +38,9 @@ Block[{$directory, $libSrc, $libDir, $linkerOptions},
     If[$OperatingSystem =!= "Windows",
         uvLib = FileNameJoin[{$directory, "UV", $SystemID, "libuv."<>Internal`DynamicLibraryExtension[]}];
         If[!FileExistsQ[uvLib],
+            CreateDirectory[FileNameJoin[{$directory, "UV", $SystemID}] ];
             Echo["Storing UV library..."];
+            Echo[$ScriptCommandLine[[-1]]];
             CopyFile[$ScriptCommandLine[[-1]], uvLib];
         ];
     ];
