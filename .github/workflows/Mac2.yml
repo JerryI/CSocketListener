@@ -1,12 +1,11 @@
 name: Compile LLink Mac and UV
 on: workflow_dispatch
 jobs:
-
-  MacOSX-x64:
-    runs-on: macos-13
+  MacOSX-ARM:
+    runs-on: macos-latest
     env:
-      WOLFRAM_SYSTEM_ID: MacOSX-x64
-      WOLFRAMENGINE_CACHE_KEY: WolframEngine-D
+      WOLFRAM_SYSTEM_ID: MacOSX-ARM
+      WOLFRAMENGINE_CACHE_KEY: WolframEngine-B
       WOLFRAMENGINE_INSTALLATION_DIRECTORY: "/Applications/Wolfram Engine.app"
     steps:
       - name: Check out repository
@@ -37,7 +36,8 @@ jobs:
         run: |
           export PATH="${{ env.WOLFRAMENGINE_EXECUTABLES_DIRECTORY }}:$PATH"
 
-          wolframscript -debug -verbose -script ./Scripts/BuildLibrary.wls /usr/local/include/ /usr/local/lib/libuv.a
+          wolframscript -debug -verbose -script ./Scripts/BuildLibrary.wls /System/Volumes/Data/opt/homebrew/include/ /System/Volumes/Data/opt/homebrew/lib/libuv.a
+
 
       - name: Commit files
         run: |

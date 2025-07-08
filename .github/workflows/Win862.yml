@@ -1,12 +1,12 @@
 name: Compile LLink x86 Windows 
 on: workflow_dispatch
-jobs:
-  Windows-x86-64-v7:
+jobs:       
+  Windows-x86-64-v6:
     runs-on: windows-latest
     env:
-      WOLFRAM_SYSTEM_ID: Windows-x86-64-v7
-      WOLFRAMENGINE_INSTALL_MSI_DOWNLOAD_URL: https://files.wolframcdn.com/packages/winget/14.0.0.0/WolframEngine_14.0.0_WIN.msi
-      WOLFRAMENGINE_CACHE_KEY: WolframEngine-B
+      WOLFRAM_SYSTEM_ID: Windows-x86-64-v6
+      WOLFRAMENGINE_INSTALL_MSI_DOWNLOAD_URL: https://files.wolframcdn.com/packages/winget/13.0.0.0/WolframEngine_13.0.0_WIN.msi
+      WOLFRAMENGINE_CACHE_KEY: WolframEngine-C
       WOLFRAMENGINE_INSTALLATION_SUBDIRECTORY: WolframEngine
     steps:
       - name: Check out repository
@@ -70,5 +70,3 @@ jobs:
           git commit -m "Add binary for ${{ env.WOLFRAM_SYSTEM_ID }}"
           git pull
           git push
-          
- 
