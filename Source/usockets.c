@@ -372,7 +372,7 @@ void on_new_connection(uv_stream_t *server, int status) {
 
         struct sockaddr_storage addr;
 	    memset(&addr, 0, sizeof(addr));
-	    int alen = 0;
+	    int alen;
 	    int r = uv_tcp_getpeername((uv_stream_t*) c, (struct sockaddr *)&addr, &alen);
 
         //uv_tcp_getsockname((uv_handle_t*)sockets[nsockets].stream, &(sockets[nsockets].addr), sizeof((sockets[nsockets].addr)));
@@ -438,6 +438,7 @@ DLLEXPORT int socket_open(WolframLibraryData libData, mint Argc, MArgument *Args
 
     uv_tcp_t* s = (uv_tcp_t*)malloc(sizeof(uv_tcp_t));
 
+    uv_mutex_lock(&mutex);
     findEmptySocketSlot();
 
     //hash_table_occupy((uv_stream_t*)s, nservers);
@@ -449,7 +450,7 @@ DLLEXPORT int socket_open(WolframLibraryData libData, mint Argc, MArgument *Args
     sockets[nsockets].state = 0;
    // sockets[nsockets].type = 0;
 
-   printf("opened on socket %d\n", nsockets);
+    printf("opened on socket %d\n", nsockets);
 
 
     uv_tcp_init(loop, s);
@@ -458,6 +459,9 @@ DLLEXPORT int socket_open(WolframLibraryData libData, mint Argc, MArgument *Args
     
 
     MArgument_setInteger(Res, nsockets); 
+
+    uv_mutex_unlock(&mutex);
+
     return LIBRARY_NO_ERROR;
 }
 
@@ -497,8 +501,8 @@ typedef struct uv_write_q_st {
     uv_buf_t* buf;
 } uv_write_q; 
 
-volatile uv_write_q uv_write_que[128];
-volatile int uv_write_que_ptr = -1;
+uv_write_q uv_write_que[128];
+int uv_write_que_ptr = -1;
 
 void echo_write(uv_write_t *req, int status) {
     //printf("echo write\n");
@@ -554,14 +558,23 @@ write_fifo_t close_fifo[64];
 
 
 void async_cb_write(uv_async_t* async, int status) {
-  //printf("async_cb\n");
   uv_mutex_lock(&mutex);
-  while (write_fifo_ptr >= 0) {
-    uv_write(write_fifo[write_fifo_ptr].req, write_fifo[write_fifo_ptr].stream, write_fifo[write_fifo_ptr].buf, 1, echo_write);
-    write_fifo_ptr--;
+
+  int count = write_fifo_ptr + 1;    // number of pending writes
+  for (int i = 0; i < count; i++) {
+    uv_write(
+      write_fifo[i].req,
+      write_fifo[i].stream,
+      write_fifo[i].buf,
+      1,
+      echo_write
+    );
   }
+
+  // clear the queue
+  write_fifo_ptr = -1;
+
   uv_mutex_unlock(&mutex);
-  //uv_close((uv_handle_t*) async, NULL);
 }
 
 void async_cb_close(uv_async_t* async, int status) {
@@ -582,7 +595,6 @@ uv_mutex_unlock(&mutex);
 
 
 int uv_write_push(uv_write_t* req, uv_stream_t* stream, uv_buf_t* buf) {
-    uv_async_t *message = (uv_async_t*)malloc(sizeof(uv_async_t));
     uv_mutex_lock(&mutex);
     ++write_fifo_ptr;
     write_fifo[write_fifo_ptr].req = req;
@@ -596,7 +608,6 @@ int uv_write_push(uv_write_t* req, uv_stream_t* stream, uv_buf_t* buf) {
 }
 
 void uv_close_push(uv_handle_t* handle, void* m) {
-    uv_async_t *message = (uv_async_t*)malloc(sizeof(uv_async_t));
     uv_mutex_lock(&mutex);
     ++close_fifo_ptr;
     close_fifo[close_fifo_ptr].handle = handle;
