@@ -1,4 +1,4 @@
-name: Compile LLink x86 Windows 
+name: Compile LLink x86 Windows v7
 on: workflow_dispatch
 jobs:
   Windows-x86-64-v7:

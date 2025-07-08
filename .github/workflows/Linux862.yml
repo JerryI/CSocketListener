@@ -1,4 +1,4 @@
-name: Compile LLink x86 Linux 
+name: Compile LLink x86 Linux v8
 on: workflow_dispatch
 jobs:
   Linux-x86-64-v8:

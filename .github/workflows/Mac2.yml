@@ -1,4 +1,4 @@
-name: Compile LLink Mac and UV
+name: Compile LLink Mac and UV ARM
 on: workflow_dispatch
 jobs:
   MacOSX-ARM:

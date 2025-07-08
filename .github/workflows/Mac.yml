@@ -1,4 +1,4 @@
-name: Compile LLink Mac and UV
+name: Compile LLink Mac and UV x64
 on: workflow_dispatch
 jobs:
 
