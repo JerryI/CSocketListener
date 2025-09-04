@@ -35,15 +35,13 @@ Block[{$directory, $libSrc, $libDir, $linkerOptions, uvLib},
         $InputFileName
     ], 2]; 
 
-    If[$OperatingSystem =!= "Windows",
-        uvLib = FileNameJoin[{$directory, "UV", $SystemID, "libuv."<>Internal`DynamicLibraryExtension[]}];
-        If[!FileExistsQ[uvLib],
+    uvLib = FileNameJoin[{$directory, "UV", $SystemID, "libuv."<>Internal`DynamicLibraryExtension[]}];
+    If[!FileExistsQ[uvLib],
             CreateDirectory[FileNameJoin[{$directory, "UV", $SystemID}] ];
             Echo["Storing UV library..."];
             Echo[$ScriptCommandLine[[-1]]];
             Echo[uvLib];
             CopyFile[$ScriptCommandLine[[-1]], uvLib, OverwriteTarget->True] // Echo;
-        ];
     ];
 
     $libSrc = File[FileNameJoin[{
@@ -69,7 +67,12 @@ Block[{$directory, $libSrc, $libDir, $linkerOptions, uvLib},
 ]; 
 
 If[$OperatingSystem === "Windows", 
-	build["wsockets", "Libraries" -> {"ws2_32"}]
+	$includes = $ScriptCommandLine[[-2]];
+	$libs = $ScriptCommandLine[[-1]];
+
+
+
+	build["wsockets", "Libraries" -> {$libs}, "IncludeDirectories"->{$includes}] 
 , 
 
 	$includes = $ScriptCommandLine[[-2]];

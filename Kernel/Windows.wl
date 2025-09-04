@@ -1,21 +1,23 @@
 BeginPackage["KirillBelov`CSockets`Interface`Windows`"]
 
 createAsynchronousTask;
-
 socketOpen;
 socketClose;
-socketListenerTaskRemove;
-socketConnect;
 socketBinaryWrite;
 socketWriteString;
+
+socketConnect;
+
 socketReadyQ;
 socketReadMessage;
 socketPort;
+
 
 Begin["`Private`"]
 
 (* ::Section:: *)
 (*Internal*)
+
 
 getLibraryLinkVersion[] := getLibraryLinkVersion[] =
 Which[
@@ -48,10 +50,19 @@ $libFile := FileNameJoin[{
 	"wsockets." <> Internal`DynamicLibraryExtension[]
 }]; 
 
-Echo["CSockets >> Windows >> Loading library... LLink v"<>ToString[getLibraryLinkVersion[] ] ];
+
+Echo["CSockets >> Windows >> " <> $SystemID];
+
+uvLib = FileNameJoin[{$directory, "UV", $SystemID, "libuv."<>Internal`DynamicLibraryExtension[]}];
+If[FileExistsQ[uvLib],
+    Echo["CSockets >> Windows >> Loading UV library..."];
+    LibraryLoad[uvLib];
+];
+
+Echo["CSockets >> Windows >> Loading library... LLink "<>ToString[getLibraryLinkVersion[] ] ];
 
 While[FailureQ[
-    socketOpen = LibraryFunctionLoad[$libFile, "socketOpen", {String, String}, Integer] 
+    runLoop = LibraryFunctionLoad[$libFile, "run_uvloop", {Integer}, Integer]
 ] && getLibraryLinkVersion[] > 5,
     getLibraryLinkVersion[] = getLibraryLinkVersion[] - 1;
     Echo["CSockets >> Windows >> Another attempt to load v"<>ToString[getLibraryLinkVersion[] ] ];
@@ -62,29 +73,96 @@ If[getLibraryLinkVersion[] <= 5,
     Exit[-1];
 ]
 
-Echo["CSockets >> Windows >> Succesfully loaded!"];
+
+Echo["CSockets >> Windows >> Succesfully loaded! LLink "];
 
 
-(* ::Section:: *)
-(*Implementation*)
+socketsInfo = <||>;
+
+(* A hack, since UV Library does not allow to have multiple event loops *)
+router;
+task;
 
 createAsynchronousTask[socketId_, handler_, OptionsPattern[] ] := With[{},
-    Internal`CreateAsynchronousTask[socketListen, {socketId, OptionValue["BufferSize"]}, handler]
-];
+ 
+    With[{sid = createServer @ socketId},
+        router[_,  event_String, {sid, cid_, payload_}] := (handler[sid, event, {sid, cid, payload}]);
+        router[_, "NewClient", {sid, cid_, port_}] := ( socketsInfo[cid] = port);
+    ];   
+
+    (* multiple async tasks are not supported! just return server's id *)
+    If[!TrueQ[task], internalTask = Internal`CreateAsynchronousTask[runLoop, {0}, router[##]&]; task = True];
+   
+
+    internalTask
+]
 
 Options[createAsynchronousTask] = {"BufferSize"->2^11}
 
+socketOpen[host_String, port_String] := With[{uid = openSocket[host, port]},
+    socketsInfo[uid] = ToExpression[port];
+    uid
+]
 
-socketClose = LibraryFunctionLoad[$libFile, "socketClose", {Integer}, Integer]; 
-socketListen = LibraryFunctionLoad[$libFile, "socketListen", {Integer, Integer}, Integer]; 
-socketListenerTaskRemove = LibraryFunctionLoad[$libFile, "socketListenerTaskRemove", {Integer}, Integer]; 
-socketConnect = LibraryFunctionLoad[$libFile, "socketConnect", {String, String}, Integer]; 
-socketBinaryWrite = LibraryFunctionLoad[$libFile, "socketBinaryWrite", {Integer, "ByteArray", Integer, Integer}, Integer]; 
-socketWriteString = LibraryFunctionLoad[$libFile, "socketWriteString", {Integer, String, Integer, Integer}, Integer]; 
-socketReadyQ = LibraryFunctionLoad[$libFile, "socketReadyQ", {Integer}, True | False]; 
-socketReadMessage = LibraryFunctionLoad[$libFile, "socketReadMessage", {Integer, Integer}, "ByteArray"]; 
-socketPort = LibraryFunctionLoad[$libFile, "socketPort", {Integer}, Integer]; 
+openSocket = LibraryFunctionLoad[$libFile, "socket_open", {String, String}, Integer]; 
+createServer = LibraryFunctionLoad[$libFile, "create_server", {Integer}, Integer]; 
+socketClose = LibraryFunctionLoad[$libFile, "close_socket", {Integer}, Integer]; 
+socketBinaryWrite = LibraryFunctionLoad[$libFile, "socket_write", {Integer, "ByteArray", Integer, Integer}, Integer]; 
+socketWriteString = LibraryFunctionLoad[$libFile, "socket_write_string", {Integer, String, Integer, Integer}, Integer]; 
 
+socketConnectInternal = LibraryFunctionLoad[$libFile, "socket_connect", {Integer}, Integer];
+
+buffers;
+
+socketConnect[host_String, port_String] := Module[{state = False}, With[{sid = socketConnectInternal[socketOpen[host, port] ]},
+    Echo["sid >> "<>ToString[sid] ];
+    
+    buffers[sid] = {};
+
+    router[_, "Received", {sid, _, payload_}] := With[{data = ByteArray[payload]},
+        If[Length[buffers[sid] ] == 0,
+            buffers[sid] = data;
+        ,
+            buffers[sid] = Join[buffers[sid], data];
+        ];
+    ];
+
+    router[_, "Connected", {sid, __}] := state = True;
+
+
+    If[!TrueQ[task], internalTask = Internal`CreateAsynchronousTask[runLoop, {0}, router[##]&]; task = True];
+
+    TimeConstrained[
+        While[!state,
+            Pause[0.3];
+        ];
+
+        ClearAll[state];
+
+        
+
+        sid
+
+    , 10, $Failed]
+] ]
+
+socketReadyQ[uid_] := Length[buffers[uid] ] > 0
+
+socketReadMessage[uid_, size_] := With[{},
+    While[Length[buffers[uid] ] < size,
+        Pause[0.1];
+    ];
+
+    With[{d = Take[buffers[uid], size]},
+        If[Length[buffers[uid] ] == size, buffer[uid] = {}, buffers[uid] = Drop[buffer[uid], size] ];
+        d
+    ]
+]
+
+socketPort[id_] := If[KeyExistsQ[socketsInfo, id], 
+    socketsInfo[id], 
+    -1
+]
 
 End[]
 EndPackage[]
