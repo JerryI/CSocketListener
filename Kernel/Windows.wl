@@ -51,30 +51,30 @@ $libFile := FileNameJoin[{
 }]; 
 
 
-Echo["CSockets >> Unix >> " <> $SystemID];
+Echo["CSockets >> Windows >> " <> $SystemID];
 
 uvLib = FileNameJoin[{$directory, "UV", $SystemID, "uv."<>Internal`DynamicLibraryExtension[]}];
 If[FileExistsQ[uvLib],
-    Echo["CSockets >> Unix >> Loading UV library..."];
+    Echo["CSockets >> Windows >> Loading UV library..."];
     LibraryLoad[uvLib];
 ];
 
-Echo["CSockets >> Unix >> Loading library... LLink "<>ToString[getLibraryLinkVersion[] ] ];
+Echo["CSockets >> Windows >> Loading library... LLink "<>ToString[getLibraryLinkVersion[] ] ];
 
 While[FailureQ[
     runLoop = LibraryFunctionLoad[$libFile, "run_uvloop", {Integer}, Integer]
 ] && getLibraryLinkVersion[] > 5,
     getLibraryLinkVersion[] = getLibraryLinkVersion[] - 1;
-    Echo["CSockets >> Unix >> Another attempt to load v"<>ToString[getLibraryLinkVersion[] ] ];
+    Echo["CSockets >> Windows >> Another attempt to load v"<>ToString[getLibraryLinkVersion[] ] ];
 ];
 
 If[getLibraryLinkVersion[] <= 5, 
-    Echo["CSockets >> Unix >> Loading process failed. "];
+    Echo["CSockets >> Windows >> Loading process failed. "];
     Exit[-1];
 ]
 
 
-Echo["CSockets >> Unix >> Succesfully loaded! LLink "];
+Echo["CSockets >> Windows >> Succesfully loaded! LLink "];
 
 
 socketsInfo = <||>;

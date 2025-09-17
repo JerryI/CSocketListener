@@ -38,11 +38,11 @@ Block[{$directory, $libSrc, $libDir, $linkerOptions, uvLib},
 
         uvLib = FileNameJoin[{$directory, "UV", $SystemID, "libuv."<>Internal`DynamicLibraryExtension[]}];
         If[!FileExistsQ[uvLib],
-            CreateDirectory[FileNameJoin[{$directory, "UV", $SystemID}] ];
+            (* CreateDirectory[FileNameJoin[{$directory, "UV", $SystemID}] ]; *)
             Echo["Storing UV library..."];
             Echo[$ScriptCommandLine[[-1]]];
             Echo[uvLib];
-            CopyFile[$ScriptCommandLine[[-1]], uvLib, OverwriteTarget->True] // Echo;
+            (* CopyFile[$ScriptCommandLine[[-1]], uvLib, OverwriteTarget->True] // Echo; *)
         ];
 
 
