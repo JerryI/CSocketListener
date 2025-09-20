@@ -152,7 +152,7 @@ If[FailureQ[
         , 10, $Failed]
     ] ];
 
-    socketReadyQ[uid_] := Length[buffers[uid] ] > 0
+    socketReadyQ[uid_] := Length[buffers[uid] ] > 0;
 
     socketReadMessage[uid_, size_] := With[{},
         While[Length[buffers[uid] ] < size,
