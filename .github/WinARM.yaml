@@ -61,12 +61,8 @@ jobs:
 
           wolfram -script ./Scripts/BuildLibrary.wls
 
-      - name: Commit files
-        run: |
-          git config pull.rebase false        
-          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add LibraryResources/
-          git commit -m "Add binary for ${{ env.WOLFRAM_SYSTEM_ID }}"
-          git pull
-          git push
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.WOLFRAM_SYSTEM_ID }}
+          path: LibraryResources/${{ env.WOLFRAM_SYSTEM_ID }}/
